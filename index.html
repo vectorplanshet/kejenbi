@@ -1915,7 +1915,7 @@ fetch('trevoga.json')
                 let region = checkbox.id;
                 if (checkbox.checked && regions[region]) {
                     let layer = L.geoJSON(regions[region], {
-                        style: { color: 'red', fillColor: 'red', fillOpacity: 0.13, weight: 0.3 }
+                        style: { color: 'red', fillColor: 'red', fillOpacity: 0.13, weight: 0.4 }
                     }).addTo(map);
                     polygons[region] = layer;
                 } else if (polygons[region]) {

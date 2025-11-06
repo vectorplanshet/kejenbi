@@ -1275,7 +1275,7 @@ updateOverlayFilter();
   iconHtml = `
     <div class="icon-container ${iconClass}">
       <img src="${iconUrl}" class="icon" />
-                          <span class="r-container ${iconClass}">ПП</span>
+                          <span class="r-container1 ${iconClass}">ПП</span>
     </div>
   `;
       icon = L.divIcon({
@@ -1290,7 +1290,7 @@ updateOverlayFilter();
     iconHtml = `
         <div class="icon-container ${iconClass}">
             <img src="${iconUrl}" class="icon" />
-                                <span class="r-container ${iconClass}">ЗЛ</span>
+                                <span class="r-container1 ${iconClass}">ЗЛ</span>
         </div>
     `;
               icon = L.divIcon({
@@ -1305,7 +1305,7 @@ updateOverlayFilter();
   iconHtml = `
     <div class="icon-container ${iconClass}">
       <img src="${iconUrl}" class="icon" />
-                    <span class="r-container ${iconClass}">СВ</span>
+                    <span class="r-container1 ${iconClass}">СВ</span>
     </div>
   `;
           icon = L.divIcon({
@@ -1477,6 +1477,10 @@ if (document.readyState === "loading") {
 }
 
 function createTopMenu(marker) {
+        // ←←← добавляем этот блок
+    if (typeof deleteMode !== 'undefined' && deleteMode) {
+        return; // в режиме удаления меню вообще не показываем
+    }
     // если меню для этого объекта уже есть — выходим
     if (document.getElementById('top-menu-' + objectId)) return;
 
@@ -1797,18 +1801,31 @@ function openCoordsModal(callback) {
 
 
 // ==== Удаление маркера без удаления линии ====
-marker.on('click', function () {
+// ==== Клик по маркеру ====
+// ==== Клик по маркеру ====
+marker.on('click', function (e) {
+    // если активен deleteMode — только удаляем, без меню
     if (deleteMode) {
+        e.originalEvent.stopPropagation(); // блокируем всплытие
+        e.originalEvent.preventDefault();  // предотвращаем другие действия
+
         if (confirm('Удалить этот объект?')) {
             marker.remove();
             isActive = false;
             const deleteButton = document.getElementById('deleteButton');
             if (deleteButton) {
-                deleteMode = false; // сразу выходим из режима
+                deleteMode = false;
                 deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            }
         }
+
+        return; // <<< прекращаем выполнение, меню не откроется
     }
-}});});});});
+
+    // если не deleteMode — показываем меню
+    createTopMenu(marker);
+
+},);});})});
 
 // ==== Кнопка deleteMode ====
 document.getElementById('deleteButton').onclick = function () {

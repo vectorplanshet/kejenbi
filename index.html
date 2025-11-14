@@ -1923,8 +1923,35 @@ fetch('districts.geojson')
     document.querySelectorAll('#alert-menu input[type=checkbox]').forEach(checkbox => {
       const region = checkbox.id;
 
-      checkbox.addEventListener('click', function (e) {
+      checkbox.addEventListener('click', async function (e) {
         e.preventDefault(); // блокируем установку галочки
+
+        // ======== ОТДЕЛЬНО ОБРАБАТЫВАЕМ г.Київ ========
+        if (region === 'г.Київ') {
+          if (polygons['Kyiv']) {
+            // если уже включён — выключаем
+            map.removeLayer(polygons['Kyiv']);
+            delete polygons['Kyiv'];
+            checkbox.checked = false;
+            return;
+          }
+
+          // загружаем Kyiv.json
+          const kyivData = await fetch('Kyiv.json').then(r => r.json());
+          const kyivLayer = L.geoJSON(kyivData, {
+            style: {
+                  color: 'red',
+                    fillColor: 'red',
+                    fillOpacity: 0.13,
+                    weight: 0.2
+            }
+          }).addTo(map);
+
+          polygons['Kyiv'] = kyivLayer;
+          checkbox.checked = true;
+          return; // не открываем список
+        }
+        // ==============================================
 
         const existingList = checkbox.parentElement.querySelector('.district-list');
         if (existingList) {
@@ -1950,7 +1977,6 @@ fetch('districts.geojson')
 
             const districtCheckbox = div.querySelector('input');
 
-            // если этот район уже активен — ставим галочку
             if (activeDistricts[districtName]) {
               districtCheckbox.checked = true;
             }
@@ -1964,18 +1990,18 @@ fetch('districts.geojson')
                     color: 'red',
                     fillColor: 'red',
                     fillOpacity: 0.13,
-                    weight: 0.0
+                    weight: 0.15
                   }
                 }).addTo(map);
 
                 polygons[districtName] = layer;
-                activeDistricts[districtName] = true; // сохраняем состояние
+                activeDistricts[districtName] = true;
               } else {
                 if (polygons[districtName]) {
                   map.removeLayer(polygons[districtName]);
                   delete polygons[districtName];
                 }
-                delete activeDistricts[districtName]; // убираем из активных
+                delete activeDistricts[districtName];
               }
             };
           });
@@ -1991,6 +2017,7 @@ document.getElementById('alert-button').onclick = function() {
   menuVisible = !menuVisible;
   document.getElementById('alert-menu').style.display = menuVisible ? 'block' : 'none';
 };
+
         function getKievTime() {
     const options = {
         timeZone: 'Europe/Kiev',

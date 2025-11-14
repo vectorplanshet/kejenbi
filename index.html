@@ -2067,17 +2067,28 @@ function getNextLitakId() {
      // Загрузка GeoJSON файла
     // Загружаем ОККУПИРОВАННЫЕ территории
     // Загружаем ЛИНИЮ фронта
-    fetch('line.json')
-      .then(res => res.json())
-      .then(data => {
-        L.geoJSON(data, {
-          style: {
-            color: 'red',
-            weight: 1,
-            fill: false
-          }
-        }).addTo(map);
-      })
+fetch('line.json')
+  .then(res => res.json())
+  .then(data => {
+    L.geoJSON(data, {
+      style: {
+        color: 'red',
+        weight: 1.5
+      }
+    }).addTo(map);
+  });
+
+fetch('okkyp.json')
+  .then(res => res.json())
+  .then(data => {
+    L.geoJSON(data, {
+      style: {
+        stroke: false,        // 🔥 отключает контур
+        fillColor: '#e6a57a',
+        fillOpacity: 0.3      // прозрачность, подбери
+      }
+    }).addTo(map);
+  });
 
     </script>
 </body>

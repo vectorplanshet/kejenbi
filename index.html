@@ -1907,101 +1907,86 @@ fetch("front.json")
   .catch(error => console.error("Ошибка загрузки JSON:", error));
 
 let polygons = {}; // активные районы
+let activeDistricts = {}; // какие районы включены
 let menuVisible = false;
-
 
 fetch('districts.geojson')
   .then(response => response.json())
   .then(geojsonData => {
-    // группируем районы по областям (по ADMIN_1)
     const districtsByRegion = {};
     geojsonData.features.forEach(feature => {
-      const region = feature.properties.ADMIN_1; // <-- область
+      const region = feature.properties.ADMIN_1;
       if (!districtsByRegion[region]) districtsByRegion[region] = [];
       districtsByRegion[region].push(feature);
     });
 
-    // работаем с чекбоксами областей из HTML
     document.querySelectorAll('#alert-menu input[type=checkbox]').forEach(checkbox => {
       const region = checkbox.id;
 
-      checkbox.onchange = function() {
-        // если сняли галочку — убираем список и подсветку
-        const oldList = checkbox.parentElement.querySelector('.district-list');
-        if (!checkbox.checked) {
-          if (oldList) {
-            oldList.querySelectorAll('input[type=checkbox]').forEach(dcb => {
-              if (polygons[dcb.id]) {
-                map.removeLayer(polygons[dcb.id]);
-                delete polygons[dcb.id];
-              }
-            });
-            oldList.remove();
-          }
+      checkbox.addEventListener('click', function (e) {
+        e.preventDefault(); // блокируем установку галочки
+
+        const existingList = checkbox.parentElement.querySelector('.district-list');
+        if (existingList) {
+          existingList.remove();
           return;
         }
 
-        // если включили — показываем районы этой области
         if (districtsByRegion[region]) {
           const subList = document.createElement('div');
           subList.className = 'district-list';
           subList.style.marginLeft = '20px';
+          subList.style.marginTop = '5px';
 
           districtsByRegion[region].forEach(feature => {
-            const districtName = feature.properties.ADMIN_2; // <-- район
+            const districtName = feature.properties.ADMIN_2;
+
             const div = document.createElement('div');
             div.innerHTML = `
               <input type="checkbox" id="${districtName}" data-region="${region}">
               <label for="${districtName}">${districtName}</label>
             `;
             subList.appendChild(div);
-          });
 
-          checkbox.parentElement.appendChild(subList);
+            const districtCheckbox = div.querySelector('input');
 
-          // обработчики для чекбоксов районов
-          subList.querySelectorAll('input[type=checkbox]').forEach(districtCheckbox => {
+            // если этот район уже активен — ставим галочку
+            if (activeDistricts[districtName]) {
+              districtCheckbox.checked = true;
+            }
+
             districtCheckbox.onchange = function() {
-              const dName = districtCheckbox.id;
-              const regionName = districtCheckbox.dataset.region;
-              const feature = districtsByRegion[regionName].find(f => f.properties.ADMIN_2 === dName);
+              const featureData = districtsByRegion[region].find(f => f.properties.ADMIN_2 === districtName);
 
               if (districtCheckbox.checked) {
-                const layer = L.geoJSON(feature, {
+                const layer = L.geoJSON(featureData, {
                   style: {
                     color: 'red',
                     fillColor: 'red',
                     fillOpacity: 0.13,
-                    weight: 0
+                    weight: 0.0
                   }
                 }).addTo(map);
-                polygons[dName] = layer;
-              } else if (polygons[dName]) {
-                map.removeLayer(polygons[dName]);
-                delete polygons[dName];
+
+                polygons[districtName] = layer;
+                activeDistricts[districtName] = true; // сохраняем состояние
+              } else {
+                if (polygons[districtName]) {
+                  map.removeLayer(polygons[districtName]);
+                  delete polygons[districtName];
+                }
+                delete activeDistricts[districtName]; // убираем из активных
               }
             };
           });
-        }
-      };
-    });
 
-    // чекбокс "По всей территории"
-    const allBox = document.getElementById('По всей территории');
-    if (allBox) {
-      allBox.onchange = function() {
-        const state = this.checked;
-        document.querySelectorAll('#alert-menu input[type=checkbox]').forEach(cb => {
-          if (cb.id !== 'По всей территории') {
-            cb.checked = state;
-            cb.onchange();
-          }
-        });
-      };
-    }
+          checkbox.parentElement.appendChild(subList);
+        }
+      });
+    });
   });
 
-// обработка кнопки "Дать тревогу"
+// кнопка "Дать тревогу"
 document.getElementById('alert-button').onclick = function() {
   menuVisible = !menuVisible;
   document.getElementById('alert-menu').style.display = menuVisible ? 'block' : 'none';

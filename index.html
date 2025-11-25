@@ -766,6 +766,7 @@ body {
     });
         const map = L.map('map', {
             zoomControl: false,
+
         }).setView([48.3794, 31.1656], 6);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1158,17 +1159,17 @@ if (speed >= 120 && speed <= 121) {
     } else if (speed >= 1002 && speed <= 1003) {
         iconUrl = 'f-16.png';
         iconClass = 'blue-id';
-    } else if (speed >= 1200 && speed <= 1201) {
+    } else if (speed >= 800 && speed <= 801) {
         iconUrl = 'Su-34.png';
         iconClass = 'red-id su34-icon';
-    } else if (speed >= 1600 && speed <= 1601) {
+    } else if (speed >= 815 && speed <= 816) {
         iconUrl = 'Su-57.png';
-    } else if (speed >= 1204 && speed <= 1205) {
+    } else if (speed >= 820 && speed <= 821) {
         iconUrl = 'Su-30.png';
     } else if (speed >= 1202 && speed <= 1203) {
         iconUrl = 'Su-30 BLR.png';
         iconClass = 'blue-id';  
-    } else if (speed >= 1400 && speed <= 1401) {
+    } else if (speed >= 840 && speed <= 840) {
         iconUrl = 'Su-35.png';
     } else if (speed >= 2300 && speed <= 2301) {
         iconUrl = 'Tu-22M3.png';
@@ -1189,7 +1190,7 @@ if (speed >= 120 && speed <= 121) {
         shiftedClass = 'shifted-info-container';
     } else if (speed >= 500 && speed <= 501) {
         iconUrl = 'shahed 238.png';
-    } else if (speed >= 2400 && speed <= 2450) {
+    } else if (speed >= 920 && speed <= 921) {
         iconUrl = 'mig-31.png';
     } else if (speed >= 800 && speed <= 801) {
         iconUrl = 'a-50.png';
@@ -2165,6 +2166,42 @@ fetch('districts.geojson')
       if (!districtsByRegion[region]) districtsByRegion[region] = [];
       districtsByRegion[region].push(feature);
     });
+// === ВСЕГДА подсвечиваем ЛУГАНСКУЮ ОБЛАСТЬ через trevoga.json ===
+fetch('trevoga.json')
+  .then(r => r.json())
+  .then(trevogaData => {
+
+    trevogaData.features.forEach(feature => {
+
+      // Ищем "Луганская область" в любых свойствах
+      const props = feature.properties;
+      const isLugansk = Object.values(props).some(v => 
+        typeof v === 'string' && v.trim().toLowerCase() === 'луганская область'
+      );
+
+      if (isLugansk) {
+
+        const layer = L.geoJSON(feature, {
+          style: {
+            color: 'red',
+            fillColor: 'red',
+            fillOpacity: 0.13,
+            weight: 0.3
+          }
+        }).addTo(map);
+
+        const districtName =
+          props.ADMIN_2 ||
+          props.name ||
+          props.region ||
+          'Луганская область';
+
+        polygons[districtName] = layer;
+        activeDistricts[districtName] = true;
+      }
+    });
+  });
+
 
     document.querySelectorAll('#alert-menu input[type=checkbox]').forEach(checkbox => {
       const region = checkbox.id;
@@ -2186,11 +2223,12 @@ fetch('districts.geojson')
           const kyivData = await fetch('Kyiv.json').then(r => r.json());
           const kyivLayer = L.geoJSON(kyivData, {
             style: {
-                  color: 'red',
-                    fillColor: 'red',
-                    fillOpacity: 0.13,
-                    weight: 0.2
-            }
+  color: 'red',
+  fillColor: 'red',
+  fillOpacity: 0.13,
+  weight: 0.3
+}
+
           }).addTo(map);
 
           polygons['Kyiv'] = kyivLayer;
